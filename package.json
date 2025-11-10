@@ -1,0 +1,15 @@
+{
+  "name": "sentoffercrmtoglx",
+  "version": "1.0.0",
+  "description": "Serverless function to forward Deals to GLX (template)",
+  "main": "main.js",
+  "scripts": {
+    "test": "node test-run.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "author": "Sakis Oikonomou",
+  "license": "ISC"
+}
