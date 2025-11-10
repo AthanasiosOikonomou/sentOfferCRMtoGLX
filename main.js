@@ -2,14 +2,14 @@
 require("./config");
 
 module.exports = async (event, context) => {
-  // RAW_DATA comes from the `Deals` module
-  const RAW_DATA = event.getRawData();
-  console.log("RAW DATA ", JSON.stringify(RAW_DATA));
+  // DEAL_DETAILS comes from the `Deals` module
+  const DEAL_DETAILS = event.getRawData();
+  console.log("Deal Details ", JSON.stringify(DEAL_DETAILS));
 
   // Map the raw deal to the target payload (mapper will be implemented per rules)
   try {
     const { mapDeal } = require("./deals/mapper");
-    const mapped = await mapDeal(RAW_DATA);
+    const mapped = await mapDeal(DEAL_DETAILS);
     console.log("MAPPED PAYLOAD ", JSON.stringify(mapped));
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
