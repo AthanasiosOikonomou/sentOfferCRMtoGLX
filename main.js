@@ -12,8 +12,18 @@ module.exports = async (event, context) => {
     const mapped = await mapDeal(RAW_DATA);
     console.log("MAPPED PAYLOAD ", JSON.stringify(mapped));
   } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
     console.error("Mapper error:", err && err.stack ? err.stack : err);
-    // proceed — still close successfully for now; adjust behavior when wiring HTTP
+    // On mapping/account lookup failure we stop the function and report failure
+    if (context && typeof context.closeWithFailure === "function") {
+      // Provide the error message to the platform/context where supported
+      try {
+        context.closeWithFailure(msg);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    return;
   }
 
   // Keep handler minimal for now — forwarding will be added later

@@ -45,19 +45,13 @@ async function mapDeal(rawEnvelope) {
   let customerName = account.name;
 
   // If Zoho creds are provided, try to fetch the ERP_Customer_ID from Accounts endpoint
-  try {
-    const accountsService = require("../accounts/service");
-    if (account && account.code) {
-      // account.code currently holds account id; attempt to fetch ERP_Customer_ID
-      const erpCode = await accountsService.getAccountERPCode(account.code);
-      if (erpCode) customerCode = erpCode;
-    }
-  } catch (err) {
-    // If the accounts service fails (missing creds, network), fall back to account.id
-    console.warn(
-      "Account lookup failed, using fallback account id as code:",
-      err && err.message ? err.message : err
-    );
+  // NOTE: do not swallow failures from the accounts service. If the account service fails
+  // (network, auth, etc.) we want the pipeline to stop and surface the error to the caller.
+  const accountsService = require("../accounts/service");
+  if (account && account.code) {
+    // account.code currently holds account id; attempt to fetch ERP_Customer_ID
+    const erpCode = await accountsService.getAccountERPCode(account.code);
+    if (erpCode) customerCode = erpCode;
   }
 
   const payload = {
