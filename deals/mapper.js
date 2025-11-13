@@ -54,13 +54,18 @@ async function mapDeal(rawEnvelope) {
     if (erpCode) customerCode = erpCode;
   }
 
+  // OfficialDate should be today's date in D/M/YYYY format (e.g. 24/4/2020)
+  const now = new Date();
+  const officialDate = `${now.getDate()}/${
+    now.getMonth() + 1
+  }/${now.getFullYear()}`;
+
   const payload = {
     CommercialEntries: [
       {
         EntryTypeCode: "ΠΡΟΣΦΧΟΝ",
-        OfficialDate: "xxx",
+        OfficialDate: officialDate,
         WareHouseCode: "00",
-        PaymentCode: paymentCode,
         Customer: {
           Code: customerCode,
           Name: customerName,
