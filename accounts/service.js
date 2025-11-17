@@ -89,6 +89,49 @@ async function getAccountERPCode(accountId) {
   return null;
 }
 
+async function getAccountAFM(accountId) {
+  if (!accountId) return null;
+  const zoho = config.zoho || {};
+  const apiBase = (zoho.apiBaseUrl || "https://www.zohoapis.eu").replace(
+    /\/?$/,
+    ""
+  );
+
+  // get access token
+  const token = await getAccessToken();
+
+  const url = `${apiBase}/crm/v2/Accounts/${encodeURIComponent(accountId)}`;
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Zoho-oauthtoken ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`Zoho API returned ${resp.status}: ${txt}`);
+  }
+
+  const json = await resp.json();
+  if (json && Array.isArray(json.data) && json.data.length > 0) {
+    const record = json.data[0];
+    // AFM/TIN might be stored under several possible API names; check common variants
+    return (
+      record.Account_AFM ||
+      record.Account_afm ||
+      record.account_afm ||
+      record.AFM ||
+      record.afm ||
+      record.AccountAFM ||
+      null
+    );
+  }
+  return null;
+}
+
 module.exports = {
   getAccountERPCode,
+  getAccountAFM,
 };

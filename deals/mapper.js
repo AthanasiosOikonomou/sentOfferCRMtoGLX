@@ -8,10 +8,29 @@
 
 function safeGetAccount(data) {
   // Prefer explicit Account_Name object when present
-  if (!data) return { code: null, name: null };
+  if (!data) return { code: null, name: null, afm: null };
   const acct = data.Account_Name || data.Account || null;
-  if (!acct) return { code: null, name: null };
-  return { code: acct.id || null, name: acct.name || null };
+  // Helper to read AFM from object using several common key variants
+  const readAfmFrom = (obj) => {
+    if (!obj) return null;
+    return obj.Account_AFM || null;
+  };
+
+  // Try reading AFM from the account object when it's an object
+  let afm = typeof acct === "object" && acct ? readAfmFrom(acct) : null;
+
+  // If not found on the account object, check top-level keys on the event payload
+  if (!afm) {
+    afm = readAfmFrom(data);
+  }
+
+  // Normalize returned code/name depending on whether acct is an object or a simple value
+  const code =
+    acct && typeof acct === "object" ? acct.id || null : acct || null;
+  const name =
+    acct && typeof acct === "object" ? acct.name || null : acct || null;
+
+  return { code, name, afm };
 }
 
 /**
@@ -50,8 +69,16 @@ async function mapDeal(rawEnvelope) {
   const accountsService = require("../accounts/service");
   if (account && account.code) {
     // account.code currently holds account id; attempt to fetch ERP_Customer_ID
+    // and AFM (Tin) from the Accounts service
     const erpCode = await accountsService.getAccountERPCode(account.code);
     if (erpCode) customerCode = erpCode;
+
+    // Try fetching AFM/Tin from the accounts service as well; prefer explicit AFM
+    const afmFromService =
+      typeof accountsService.getAccountAFM === "function"
+        ? await accountsService.getAccountAFM(account.code)
+        : null;
+    if (afmFromService) account.afm = afmFromService;
   }
 
   // OfficialDate should be today's date in D/M/YYYY format (e.g. 24/4/2020)
@@ -60,16 +87,18 @@ async function mapDeal(rawEnvelope) {
     now.getMonth() + 1
   }/${now.getFullYear()}`;
 
+  // Build Customer object and include Tin only when AFM exists
+  const customerObj = { Code: customerCode, Name: customerName };
+  if (account && account.afm) customerObj.Tin = account.afm;
+
   const payload = {
     CommercialEntries: [
       {
         EntryTypeCode: "ΠΡΟΣΦΧΟΝ",
         OfficialDate: officialDate,
         WareHouseCode: "00",
-        Customer: {
-          Code: customerCode,
-          Name: customerName,
-        },
+        PaymentCode: paymentCode,
+        Customer: customerObj,
         CommercialEntryLines: [
           {
             ItemID: "OO.PARAGGELIA",
