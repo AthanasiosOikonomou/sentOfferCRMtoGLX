@@ -92,6 +92,24 @@ async function mapDeal(rawEnvelope) {
   if (account && account.afm) customerObj.Tin = account.afm;
 
   const payload = {
+    Client: {
+      ClientID: "",
+      UserID: "",
+      AppName: "MEIDANIS",
+      Version: "",
+    },
+    MessageHeader: {
+      RequestID: "",
+      AuthKey: "",
+      Date: "/Date(-62135596800000)/",
+      EntityType: "",
+      RecordCount: 1,
+      CrcValue: "",
+    },
+    WebScenario: {
+      ID: "",
+      Code: "001",
+    },
     CommercialEntries: [
       {
         EntryTypeCode: "ΠΡΟΣΦΧΟΝ",

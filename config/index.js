@@ -1,10 +1,9 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
 
-// Use dotenv for local development; in production rely on platform env/secrets
-require("dotenv").config();
+dotenv.config();
 
-// Grouped configuration export
 const config = {
   auth: {
     username: process.env.AUTH_USERNAME || "",
@@ -21,6 +20,7 @@ const config = {
       process.env.ZOHO_ACCOUNTS_BASE_URL || "https://accounts.zoho.eu",
     apiBaseUrl: process.env.ZOHO_API_BASE_URL || "https://www.zohoapis.eu",
   },
+  auth_base_url: `${process.env.BASE_URL_AUTH}:${process.env.PORT}`,
 };
 
-module.exports = config;
+export default config;

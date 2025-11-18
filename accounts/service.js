@@ -1,4 +1,4 @@
-const config = require("../config");
+require("./config");
 
 // Simple in-memory token cache
 let cached = {
@@ -56,6 +56,13 @@ async function getAccessToken() {
 
 async function getAccountERPCode(accountId) {
   if (!accountId) return null;
+  // Allow tests/local runs to disable live Zoho lookups
+  if (
+    process.env.DISABLE_ZOHO_LOOKUP &&
+    process.env.DISABLE_ZOHO_LOOKUP !== "0"
+  ) {
+    return null;
+  }
   const zoho = config.zoho || {};
   const apiBase = (zoho.apiBaseUrl || "https://www.zohoapis.eu").replace(
     /\/?$/,
@@ -66,13 +73,20 @@ async function getAccountERPCode(accountId) {
   const token = await getAccessToken();
 
   const url = `${apiBase}/crm/v2/Accounts/${encodeURIComponent(accountId)}`;
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Zoho-oauthtoken ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+  let resp;
+  try {
+    resp = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (err) {
+    throw new Error(
+      `Failed to call Zoho API for account ${accountId}: ${err.message}`
+    );
+  }
 
   if (!resp.ok) {
     const txt = await resp.text();
@@ -91,6 +105,13 @@ async function getAccountERPCode(accountId) {
 
 async function getAccountAFM(accountId) {
   if (!accountId) return null;
+  // Allow tests/local runs to disable live Zoho lookups
+  if (
+    process.env.DISABLE_ZOHO_LOOKUP &&
+    process.env.DISABLE_ZOHO_LOOKUP !== "0"
+  ) {
+    return null;
+  }
   const zoho = config.zoho || {};
   const apiBase = (zoho.apiBaseUrl || "https://www.zohoapis.eu").replace(
     /\/?$/,
@@ -101,13 +122,20 @@ async function getAccountAFM(accountId) {
   const token = await getAccessToken();
 
   const url = `${apiBase}/crm/v2/Accounts/${encodeURIComponent(accountId)}`;
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Zoho-oauthtoken ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+  let resp;
+  try {
+    resp = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (err) {
+    throw new Error(
+      `Failed to call Zoho API for account ${accountId}: ${err.message}`
+    );
+  }
 
   if (!resp.ok) {
     const txt = await resp.text();
