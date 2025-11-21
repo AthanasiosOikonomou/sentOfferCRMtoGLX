@@ -111,6 +111,7 @@ async function mapDeal(rawEnvelope) {
     },
     CommercialEntries: [
       {
+        TradeCode: "",
         EntryTypeCode: "ΠΡΟΣΦΧΟΝ",
         OfficialDate: officialDate,
         WareHouseCode: "00",
