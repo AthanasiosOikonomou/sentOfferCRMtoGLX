@@ -1,4 +1,4 @@
-require("./config");
+import config from "../config/index.js";
 
 // Simple in-memory token cache
 let cached = {
@@ -159,7 +159,4 @@ async function getAccountAFM(accountId) {
   return null;
 }
 
-module.exports = {
-  getAccountERPCode,
-  getAccountAFM,
-};
+export { getAccountERPCode, getAccountAFM };

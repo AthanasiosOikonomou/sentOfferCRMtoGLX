@@ -66,7 +66,11 @@ async function mapDeal(rawEnvelope) {
   // If Zoho creds are provided, try to fetch the ERP_Customer_ID from Accounts endpoint
   // NOTE: do not swallow failures from the accounts service. If the account service fails
   // (network, auth, etc.) we want the pipeline to stop and surface the error to the caller.
-  const accountsService = require("../accounts/service");
+  // Import accounts service (ESM)
+  const accountsServiceMod = await import("../accounts/service.js");
+  const accountsService = accountsServiceMod.getAccountERPCode
+    ? accountsServiceMod
+    : accountsServiceMod.default || accountsServiceMod;
   if (account && account.code) {
     // account.code currently holds account id; attempt to fetch ERP_Customer_ID
     // and AFM (Tin) from the Accounts service
@@ -137,6 +141,4 @@ async function mapDeal(rawEnvelope) {
   return payload;
 }
 
-module.exports = {
-  mapDeal,
-};
+export { mapDeal };

@@ -20,7 +20,8 @@ const config = {
       process.env.ZOHO_ACCOUNTS_BASE_URL || "https://accounts.zoho.eu",
     apiBaseUrl: process.env.ZOHO_API_BASE_URL || "https://www.zohoapis.eu",
   },
-  auth_base_url: `${process.env.BASE_URL_AUTH}:${process.env.PORT}`,
+  auth_base_url: process.env.BASE_URL_AUTH,
+  offer_base_url: process.env.BASE_URL_OFFER,
 };
 
 export default config;

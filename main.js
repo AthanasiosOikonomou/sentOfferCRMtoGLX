@@ -1,14 +1,19 @@
 // Load configuration (will read .env if present)
-require("./config");
+import "./config/index.js";
 
-module.exports = async (event, context) => {
+export default async function handler(event, context) {
   // DEAL_DETAILS comes from the `Deals` module
   const DEAL_DETAILS = event.getRawData();
   console.log("Deal Details ", JSON.stringify(DEAL_DETAILS));
 
   // Map the raw deal to the target payload (mapper will be implemented per rules)
   try {
-    const { mapDeal } = require("./deals/mapper");
+    const mapperMod = await import("./deals/mapper.js");
+    const mapDeal =
+      mapperMod.mapDeal || (mapperMod.default && mapperMod.default.mapDeal);
+    if (typeof mapDeal !== "function") {
+      throw new Error("mapDeal is not a function in ./deals/mapper.js");
+    }
     const mapped = await mapDeal(DEAL_DETAILS);
     console.log("MAPPED PAYLOAD ", JSON.stringify(mapped));
   } catch (err) {
@@ -27,5 +32,7 @@ module.exports = async (event, context) => {
   }
 
   // Keep handler minimal for now — forwarding will be added later
-  context.closeWithSuccess();
-};
+  if (context && typeof context.closeWithSuccess === "function") {
+    context.closeWithSuccess();
+  }
+}
