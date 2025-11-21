@@ -1,89 +1,94 @@
 import axios from "axios";
-import config from "../config/index.js";
-import { authenticate } from "../glxAuth/auth.js";
+import { wrapper } from "axios-cookiejar-support";
+import { CookieJar } from "tough-cookie";
+import dotenv from "dotenv";
 
-/**
- * postCommercialEntry
- * Posts the mapped payload to the GLX offer endpoint using an authenticated session cookie.
- * @param {object} payload - The mapped payload to send
- * @returns {Promise<object>} - { status, data, headers }
- */
-export async function postCommercialEntry(payload) {
-  if (!config.offer_base_url) {
-    throw new Error("offer_base_url is not configured (config.offer_base_url)");
-  }
+dotenv.config();
 
-  const username = config.auth && config.auth.username;
-  const password = config.auth && config.auth.password;
+// 1. CONFIGURATION
+const CONFIG = {
+  BASE_URL: "http://192.168.0.123:9096", // Defined centrally like your test
+  USERNAME: process.env.AUTH_USERNAME,
+  PASSWORD: process.env.AUTH_PASSWORD,
+  TIMEOUT: 60000,
+};
 
-  if (!username || !password) {
-    throw new Error(
-      "GLX auth credentials missing in config.auth.username/password"
-    );
-  }
-
-  // Authenticate and get session information (may include Set-Cookie)
-  const authRes = await authenticate(username, password);
-  if (!authRes || (!authRes.sessionId && !authRes.setCookie)) {
-    throw new Error("Failed to obtain session information from GLX auth");
-  }
-
-  // Prefer server-provided Set-Cookie if available (ensures cookie name/flags match server)
-  let cookieHeader = null;
-  if (authRes.setCookie) {
-    // authRes.setCookie may be an array of cookie strings
-    cookieHeader = Array.isArray(authRes.setCookie)
-      ? authRes.setCookie.map((c) => c.split(";")[0]).join("; ")
-      : String(authRes.setCookie).split(";")[0];
-  } else if (authRes.sessionId) {
-    // Fall back to SessionId JSON value if present (server expects Cookie: SessionId=...)
-    cookieHeader = `SessionId=${authRes.sessionId}`;
-  }
-
-  // Debug: surface what we got from the auth step so we can diagnose 401s
-  try {
-    console.log("[postCommercialEntry] auth result:", {
-      sessionId: authRes.sessionId ? "<present>" : null,
-      setCookie: authRes.setCookie ? authRes.setCookie : null,
-    });
-    console.log("[postCommercialEntry] Cookie header to send:", cookieHeader);
-  } catch (e) {
-    /* ignore logging errors */
-  }
-
-  const base = String(config.offer_base_url).replace(/\/+$/, "");
-  const url = `${base}/PostCommercialEntry`;
-
-  // Send POST with sessionId as Cookie header
-  try {
-    const headers = {
+// 2. SETUP CLIENT
+// FIX: Added baseURL here. This ensures CookieJar matches the domain perfectly.
+const jar = new CookieJar();
+const client = wrapper(
+  axios.create({
+    baseURL: CONFIG.BASE_URL,
+    jar,
+    timeout: CONFIG.TIMEOUT,
+    headers: {
       "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-    if (cookieHeader) headers.Cookie = cookieHeader;
+      Connection: "keep-alive",
+    },
+  })
+);
 
-    const resp = await axios.post(url, payload, {
-      headers,
-      timeout: 20000,
-    });
+// Internal helper: Authentication
+async function authenticate() {
+  if (!CONFIG.USERNAME || !CONFIG.PASSWORD) {
+    throw new Error("❌ Missing AUTH_USERNAME or AUTH_PASSWORD in .env");
+  }
 
-    return { status: resp.status, data: resp.data, headers: resp.headers };
+  // FIX: Use relative path, exactly like your working local test
+  const url = `/auth?username=${encodeURIComponent(
+    CONFIG.USERNAME
+  )}&password=${encodeURIComponent(CONFIG.PASSWORD)}`;
+
+  console.log(`[auth] 🟡 Authenticating user: ${CONFIG.USERNAME}...`);
+
+  const start = Date.now();
+  const res = await client.get(url);
+
+  console.log(`[auth] 🟢 Success (${Date.now() - start}ms)`);
+  return res.data;
+}
+
+// -------------------------------------------------------
+// EXPORTED FUNCTION
+// -------------------------------------------------------
+export async function postCommercialEntry(payload) {
+  try {
+    // 1. Ensure we have a session
+    await authenticate();
+
+    // FIX: Use relative path. The CookieJar relies on the baseURL context.
+    const url = `/PostCommercialEntry`;
+
+    console.log(`[post] 🟡 Posting Entry to ${CONFIG.BASE_URL}${url}...`);
+
+    // 2. Send Payload
+    const start = Date.now();
+    const res = await client.post(url, payload);
+
+    console.log(`[post] 🟢 Success (${Date.now() - start}ms)`);
+
+    return res;
   } catch (err) {
-    // Normalize error
-    if (err.response) {
-      // Server responded with non-2xx
-      return {
-        status: err.response.status,
-        data: err.response.data,
-        headers: err.response.headers,
-        error: err.message,
-      };
+    // 3. DETAILED ERROR LOGGING
+    console.error("\n❌ POST COMMERCIAL ENTRY FAILED");
+    console.error("------------------------------------------------");
+
+    if (axios.isAxiosError(err)) {
+      if (err.response) {
+        console.error(`Status Code: ${err.response.status}`);
+        console.error("RAW RESPONSE DATA:");
+        console.log(JSON.stringify(err.response.data, null, 2));
+      } else if (err.request) {
+        console.error("No Response Received (Network Timeout/Firewall)");
+        console.error(err.message);
+      } else {
+        console.error("Request Setup Error:", err.message);
+      }
+    } else {
+      console.error("Runtime Error:", err);
     }
-    // If timeout or network error, make it easier to see
-    console.error(
-      "[postCommercialEntry] request error:",
-      err && err.message ? err.message : err
-    );
+    console.error("------------------------------------------------");
+
     throw err;
   }
 }

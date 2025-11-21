@@ -2,3 +2,5 @@
 node_modules/
 test-run.js
 mapped-output.json
+local-post-test.js
+run-main.js
