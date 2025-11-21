@@ -60,7 +60,9 @@ async function mapDeal(rawEnvelope) {
 
   // Default customer values from the event
   const account = safeGetAccount(data);
-  let customerCode = account.code;
+  // Use ERP customer code only. Do NOT default to the CRM record id.
+  // customerCode will remain null unless an ERP code is found via the accounts service.
+  let customerCode = null;
   let customerName = account.name;
 
   // If Zoho creds are provided, try to fetch the ERP_Customer_ID from Accounts endpoint
@@ -92,7 +94,8 @@ async function mapDeal(rawEnvelope) {
   }/${now.getFullYear()}`;
 
   // Build Customer object and include Tin only when AFM exists
-  const customerObj = { Code: customerCode, Name: customerName };
+  // Ensure Code contains ONLY the ERP customer code (or empty string when not available)
+  const customerObj = { Code: customerCode || "", Name: customerName };
   if (account && account.afm) customerObj.Tin = account.afm;
 
   const payload = {
