@@ -36,7 +36,6 @@ function safeGetAccount(data) {
 /**
  * mapDeal
  * Builds the target payload described by the user. Hardcoded values remain as-is.
- * - ${PaymentCode} -> data.Payment_Code
  * - ${code} / ${cusName} -> fetched from Accounts ERP_Customer_ID when possible
  * - ${dealId} -> data.id
  */
@@ -49,13 +48,6 @@ async function mapDeal(rawEnvelope) {
       ? firstEvent.data
       : (rawEnvelope && rawEnvelope.data) || rawEnvelope;
 
-  const paymentCode =
-    data &&
-    (data.Payment_Code !== undefined
-      ? data.Payment_Code
-      : data.PaymentCode !== undefined
-      ? data.PaymentCode
-      : null);
   const dealId = data && (data.id || data.ID || null);
 
   // Default customer values from the event
@@ -122,7 +114,6 @@ async function mapDeal(rawEnvelope) {
         EntryTypeCode: "ΠΡΟΣΦΧΟΝ",
         OfficialDate: officialDate,
         WareHouseCode: "00",
-        PaymentCode: paymentCode,
         Customer: customerObj,
         CommercialEntryLines: [
           {
