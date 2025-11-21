@@ -4,7 +4,7 @@ import "./config/index.js";
 export default async function handler(event, context) {
   // DEAL_DETAILS comes from the `Deals` module
   const DEAL_DETAILS = event.getRawData();
-  console.log("Deal Details ", JSON.stringify(DEAL_DETAILS));
+  console.log("\nDeal Details ", JSON.stringify(DEAL_DETAILS));
 
   // Map the raw deal to the target payload (mapper will be implemented per rules)
   try {
@@ -15,7 +15,7 @@ export default async function handler(event, context) {
       throw new Error("mapDeal is not a function in ./deals/mapper.js");
     }
     const mapped = await mapDeal(DEAL_DETAILS);
-    console.log("MAPPED PAYLOAD ", JSON.stringify(mapped));
+    console.log("\nMAPPED PAYLOAD ", JSON.stringify(mapped));
 
     // After mapping, send the payload to GLX via the postOffer module
     try {
