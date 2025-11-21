@@ -16,6 +16,57 @@ export default async function handler(event, context) {
     }
     const mapped = await mapDeal(DEAL_DETAILS);
     console.log("MAPPED PAYLOAD ", JSON.stringify(mapped));
+
+    // After mapping, send the payload to GLX via the postOffer module
+    try {
+      const postMod = await import("./postOffer/postCommercial.js");
+      const postCommercialEntry =
+        postMod.postCommercialEntry ||
+        (postMod.default && postMod.default.postCommercialEntry);
+
+      if (!postCommercialEntry || typeof postCommercialEntry !== "function") {
+        console.warn(
+          "postCommercialEntry not found in postOffer module; skipping POST"
+        );
+      } else {
+        console.log(
+          "[main] Sending mapped payload to GLX via postCommercialEntry..."
+        );
+        const glxResp = await postCommercialEntry(mapped);
+        console.log("--- GLX Response ---\n", JSON.stringify(glxResp, null, 2));
+        // Treat non-2xx as failure
+        if (
+          glxResp &&
+          typeof glxResp.status === "number" &&
+          glxResp.status >= 400
+        ) {
+          const errMsg = `GLX POST failed: ${glxResp.status}`;
+          if (context && typeof context.closeWithFailure === "function") {
+            try {
+              context.closeWithFailure(errMsg);
+            } catch (e) {
+              /* ignore */
+            }
+          }
+          return;
+        }
+      }
+    } catch (postErr) {
+      console.error(
+        "Failed to post to GLX:",
+        postErr && postErr.message ? postErr.message : postErr
+      );
+      if (context && typeof context.closeWithFailure === "function") {
+        try {
+          context.closeWithFailure(
+            postErr && postErr.message ? postErr.message : String(postErr)
+          );
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      return;
+    }
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
     console.error("Mapper error:", err && err.stack ? err.stack : err);
