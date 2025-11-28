@@ -90,29 +90,35 @@ async function mapDeal(rawEnvelope) {
   const customerObj = {
     Code: customerCode || "",
     Name: customerName,
-    CurrencyCode: "EUR",
-    Profession: "",
-    PrimaryAddressCode: "",
-    Street: "",
-    StreetNo: "",
-    PostalCode: "",
-    Country: "",
-    Prefecture: "",
-    City: "",
-    Phone1: null,
-    Phone2: null,
-    Email: "",
-    TaxCat: "1",
-    TaxofficeCode: "",
-    Category1Code: "",
-    Category2Code: "",
-    SpraMero: "",
-    ShipTos: [],
-    ExtraFields: [],
   };
   if (account && account.afm) customerObj.Tin = account.afm;
 
   const payload = {
+    CommercialEntries: [
+      {
+        TradeCode: "",
+        EntryTypeCode: "ΠΡΟΣΦΧΟΝ",
+        OfficialDate: officialDate,
+        CustomerEmail: "",
+        CurrencyCode: "EUR",
+        WareHouseCode: "00",
+        Customer: customerObj,
+        VoucherCode: "",
+        CommercialEntryLines: [
+          {
+            ItemID: "OO.PARAGGELIA",
+            Qty: 1,
+            Price: 1,
+          },
+        ],
+        UserFields: [
+          {
+            Field: "StringField1",
+            Value: dealId,
+          },
+        ],
+      },
+    ],
     Client: {
       ClientID: "",
       UserID: "",
@@ -131,63 +137,6 @@ async function mapDeal(rawEnvelope) {
       ID: "",
       Code: "001",
     },
-    CommercialEntries: [
-      {
-        TradeCode: "",
-        EntryTypeCode: "ΠΡΟΣΦΧΟΝ",
-        TradeNumber: "",
-        DnumID: "",
-        OfficialDate: officialDate,
-        IsOfficial: 1,
-        CustomerEmail: "",
-        CurrencyCode: "",
-        BillingSiteCode: "",
-        ShipToSiteCode: "",
-        ShipDate: "",
-        ExecutionDate: "",
-        WareHouseCode: "00",
-        SalesPersonCode: "",
-        TransPortMeanCode: "",
-        ShippingMethodCode: "",
-        TransportPurposeCode: "",
-        VoucherCode: "",
-        VatExtCode: "",
-        EntryVatCode: "",
-        Comments: "",
-        TotalValue: "",
-        Customer: customerObj,
-        CommercialEntryLines: [
-          {
-            TradeCode: null,
-            LineNum: 0,
-            ItemID: "OO.PARAGGELIA",
-            Barcode: "",
-            TotalQty: 0,
-            Color: "",
-            Size: "",
-            Qty: 1,
-            AlterQty: null,
-            AlterMeasurementUnitCode: null,
-            AlterPriceReferTo: null,
-            Price: 1,
-            DiscPerc: 0,
-            DiscAmount: 0,
-            VatValue: 0,
-            TotalAmount: 0.01,
-            Comments: "",
-            UserFields: [],
-            ExtraCharges: [],
-          },
-        ],
-        ExtraCharges: [],
-        UserFields: [
-          {
-            Field: "StringField1",
-            Value: dealId,
-          },
-        ],
-      },
-    ],
   };
 
   return payload;
